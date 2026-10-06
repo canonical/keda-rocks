@@ -41,7 +41,7 @@ parts:
       - go/1.23/stable
     build-packages:
       # `make generate` (prerequisite of `make manager`) needs protoc and the
-      # well-known protobuf types; upstream gets them from keda-tools (protoc 21.9)
+      # well-known protobuf types; upstream gets them from keda-tools
       - protobuf-compiler
       - libprotobuf-dev
     build-environment:
