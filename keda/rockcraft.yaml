@@ -17,8 +17,6 @@ services:
     override: replace
     summary: "KEDA operator service"
     startup: enabled
-    # Same entrypoint as upstream; arguments in [ ] are defaults that can be
-    # overridden at runtime.
     command: "/keda [ --zap-log-level=info --zap-encoder=console ]"
 
 parts:
@@ -50,11 +48,9 @@ parts:
       - TARGET_OS: linux
       - ARCH: amd64
     override-build: |
-      # Build the operator binary with `make manager`, as done in the upstream
-      # Dockerfile. Build from the source directory so that the Makefile can
-      # compute GIT_COMMIT from the git checkout.
+      # Build from the source directory so that the Makefile can compute GIT_COMMIT
+      # from the git checkout
       cd ${CRAFT_PART_SRC}
       make manager
 
-      # Copy the files to the install directory
       cp bin/keda ${CRAFT_PART_INSTALL}/keda
