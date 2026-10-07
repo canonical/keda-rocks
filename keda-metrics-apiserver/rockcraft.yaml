@@ -1,0 +1,57 @@
+# Based on https://github.com/kedacore/keda/blob/v2.17.3/Dockerfile.adapter
+name: keda-metrics-apiserver
+summary: KEDA metrics API server
+description: |
+  KEDA is a Kubernetes-based Event Driven Autoscaler. This rock contains the
+  KEDA metrics API server (adapter), which implements the Kubernetes external
+  metrics API and serves the metrics used by the Horizontal Pod Autoscaler
+  to scale workloads.
+version: "2.17.3"
+license: Apache-2.0
+base: ubuntu@24.04
+platforms:
+  amd64:
+run-user: _daemon_
+
+services:
+  keda-metrics-apiserver:
+    override: replace
+    summary: "KEDA metrics API server service"
+    startup: enabled
+    command: "/keda-adapter [ --secure-port=6443 --logtostderr=true --v=0 ]"
+
+parts:
+  security-team-requirement:
+    plugin: nil
+    override-build: |
+      mkdir -p ${CRAFT_PART_INSTALL}/usr/share/rocks
+      (echo "# os-release" && cat /etc/os-release && echo "# dpkg-query" && \
+      dpkg-query --root=${CRAFT_PROJECT_DIR}/../bundles/ubuntu-24.04/rootfs/ -f '${db:Status-Abbrev},${binary:Package},${Version},${source:Package},${Source:Version}\n' -W) \
+      > ${CRAFT_PART_INSTALL}/usr/share/rocks/dpkg.query
+
+  keda-metrics-apiserver:
+    plugin: go
+    source: https://github.com/kedacore/keda
+    source-type: git
+    source-tag: v2.17.3
+    source-depth: 1
+    build-snaps:
+      # Go version used in ghcr.io/kedacore/keda-tools:1.23.8
+      - go/1.23/stable
+    build-packages:
+      # `make generate` (prerequisite of `make adapter`) needs protoc and the
+      # well-known protobuf types; upstream gets them from keda-tools
+      - protobuf-compiler
+      - libprotobuf-dev
+    build-environment:
+      # Variables read by the upstream Makefile, as passed in the upstream Dockerfile.adapter
+      - VERSION: "2.17.3"
+      - TARGET_OS: linux
+      - ARCH: amd64
+    override-build: |
+      # Build from the source directory so that the Makefile can compute GIT_COMMIT
+      # from the git checkout
+      cd ${CRAFT_PART_SRC}
+      make adapter
+
+      cp bin/keda-adapter ${CRAFT_PART_INSTALL}/keda-adapter
