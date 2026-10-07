@@ -13,7 +13,7 @@ platforms:
 run-user: _daemon_
 
 services:
-  keda:
+  keda-operator:
     override: replace
     summary: "KEDA operator service"
     startup: enabled
