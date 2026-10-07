@@ -37,6 +37,10 @@ parts:
     build-snaps:
       # Go version used in ghcr.io/kedacore/keda-tools:1.23.8
       - go/1.23/stable
+    stage-packages:
+      # The operator resolves time zones (e.g. the cron scaler's `timezone` field)
+      # at runtime via Go's time.LoadLocation, which needs the system tz database
+      - tzdata
     build-packages:
       # `make generate` (prerequisite of `make manager`) needs protoc and the
       # well-known protobuf types; upstream gets them from keda-tools
