@@ -1,6 +1,0 @@
-integrations:
-  - consumer-repository: https://github.com/canonical/kserve-operators.git
-
-    replace-image:
-      - file: charms/keda-controller/metadata.yaml
-        path: resources.keda-metrics-apiserver-image.upstream-source
