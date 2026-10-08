@@ -20,3 +20,9 @@ def test_rock():
         ["docker", "run", "--rm", LOCAL_ROCK_IMAGE, "exec", "ls", "-la", "/keda"],
         check=True,
     )
+
+    # assert the tz database is present (needed by the cron scaler's `timezone` field)
+    subprocess.run(
+        ["docker", "run", "--rm", LOCAL_ROCK_IMAGE, "exec", "ls", "/usr/share/zoneinfo/Etc/UTC"],
+        check=True,
+    )
