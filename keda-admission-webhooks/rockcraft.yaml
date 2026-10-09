@@ -1,0 +1,56 @@
+# Based on https://github.com/kedacore/keda/blob/v2.17.3/Dockerfile.webhooks
+name: keda-admission-webhooks
+summary: KEDA admission webhooks
+description: |
+  KEDA is a Kubernetes-based Event Driven Autoscaler. This rock contains the
+  KEDA admission webhooks, which validate KEDA resources (such as ScaledObjects)
+  to prevent misconfigurations.
+version: "2.17.3"
+license: Apache-2.0
+base: ubuntu@24.04
+platforms:
+  amd64:
+run-user: _daemon_
+
+services:
+  keda-admission-webhooks:
+    override: replace
+    summary: "KEDA admission webhooks service"
+    startup: enabled
+    command: "/keda-admission-webhooks [ --zap-log-level=info --zap-encoder=console ]"
+
+parts:
+  security-team-requirement:
+    plugin: nil
+    override-build: |
+      mkdir -p ${CRAFT_PART_INSTALL}/usr/share/rocks
+      (echo "# os-release" && cat /etc/os-release && echo "# dpkg-query" && \
+      dpkg-query --root=${CRAFT_PROJECT_DIR}/../bundles/ubuntu-24.04/rootfs/ -f '${db:Status-Abbrev},${binary:Package},${Version},${source:Package},${Source:Version}\n' -W) \
+      > ${CRAFT_PART_INSTALL}/usr/share/rocks/dpkg.query
+
+  keda-admission-webhooks:
+    plugin: go
+    source: https://github.com/kedacore/keda
+    source-type: git
+    source-tag: v2.17.3
+    source-depth: 1
+    build-snaps:
+      # Go version used in ghcr.io/kedacore/keda-tools:1.23.8
+      - go/1.23/stable
+    build-packages:
+      # `make generate` (prerequisite of `make webhooks`) needs protoc and the
+      # well-known protobuf types; upstream gets them from keda-tools
+      - protobuf-compiler
+      - libprotobuf-dev
+    build-environment:
+      # Variables read by the upstream Makefile, as passed in the upstream Dockerfile.webhooks
+      - VERSION: "2.17.3"
+      - TARGET_OS: linux
+      - ARCH: amd64
+    override-build: |
+      # Build from the source directory so that the Makefile can compute GIT_COMMIT
+      # from the git checkout
+      cd ${CRAFT_PART_SRC}
+      make webhooks
+
+      cp bin/keda-admission-webhooks ${CRAFT_PART_INSTALL}/keda-admission-webhooks
